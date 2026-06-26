@@ -1,0 +1,24 @@
+  line  11: Assumes systemd — verify THIS host actually uses it (ours runs Docker).
+           > sudo systemctl status ministry-web.service
+  line  14: Assumes systemd — verify THIS host actually uses it (ours runs Docker).
+           > sudo systemctl restart ministry-webserver.service
+  line  14: Wrong service name. The real service is 'ministry-web'; this restarts nothing.
+           > sudo systemctl restart ministry-webserver.service
+  line  17: A tailing/streaming command in a runbook step will block automation.
+           > sudo journalctl -u ministry-web -f
+  line  17: Assumes systemd — verify THIS host actually uses it (ours runs Docker).
+           > sudo journalctl -u ministry-web -f
+  line  21: Reloads nginx after an UNVERIFIED config edit. Confirm the root cause first.
+           > sudo nginx -s reload
+  line  24: Deletes the systemd journal — destroys postmortem evidence.
+           > sudo rm -rf /var/log/journal/*
+  line  24: Recursive force-delete near a root path. A human must execute deletions.
+           > sudo rm -rf /var/log/journal/*
+  line  27: Assumes systemd — verify THIS host actually uses it (ours runs Docker).
+           > sudo systemctl is-active ministry-web.service
+  line  27: Checks the service STARTED, not that it is HEALTHY. Hit a real endpoint instead.
+           > sudo systemctl is-active ministry-web.service
+  line  29: Not a valid systemd Restart= value. Hallucinated directive.
+           > 7. If it still fails, set Restart=always-immediately in the unit file so it never stays down.
+
+11 automatic flag(s). A human still owns the verdict on every line.

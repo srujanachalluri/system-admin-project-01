@@ -1,0 +1,64 @@
+VERDICT : AI-drafted runbook vs. hand-verified runbook
+Project 1: From Runbook to Copilot — St. Augustine "ministry-web"
+Reviewer : Sareena Challuri
+Date: 2026-06-25
+AI draft reviewed: runbook-ai.txt (Claude Opus 4.8, claude-opus-4-8)
+Verified reference: runbook-verified.txt (hand-built by me and RUN on the lab box)
+
+Legend:  VERIFIED = correct & safe here | WRONG = incorrect/won't work here | UNSAFE = dangerous, do not run
+==================================================================================
+
+AI step 1:  sudo systemctl status ministry-web.service
+  Verdict:  I think WRONG
+  Error class: unverified environment - just assumed the service
+  Why:         This host runs ministry-web as a DOCKER container, but in command it mentioned systemctl
+              service. systemctl does not manage it.
+  Solution:   Replace with "docker ps --filter name=ministry-web".
+
+AI step 2:  sudo systemctl restart ministry-webserver.service
+  Verdict:   I think WRONG (two faults)
+  Error class: wrong service name + wrong platform (Just hallucinated)
+  Why:         (a) systemd again; (b) the real service is "ministry-web", but not
+               "ministry-webserver". Wrong name restarts nothing.
+  Solution:  The verified fix is "docker restart ministry-web".
+
+AI step 3:  sudo journalctl -u ministry-web -f
+  Verdict:     UNSAFE
+  Error class: blocking/streaming command inside a runbook
+  Why:         '-f' (follow) never returns; it hangs the procedure forever. Also
+               systemd-only.
+  Solution: Use a bounded capture: "docker logs --tail 20 ministry-web".
+
+AI step 4:  set nginx worker_connections to 999999, then 'nginx -s reload'
+  Verdict:     UNSAFE / WRONG
+  Error class: hallucinated config value + unverified root cause
+  Why:         "almost always worker_connections" is a guess, not a diagnosis.
+
+Solution: Do NOT edit global nginx config blindly. Reject.
+
+
+AI step 5:  sudo systemctl is-active ministry-web.service
+  Verdict:     WRONG
+  Error class: "started" treated as "healthy" (weak verification)
+  Why:         is-active only proves the process started.
+            
+  Solution:  Verify the real endpoint: 'curl -fsS http://127.0.0.1:8080/healthz'
+               and require HTTP 200 with body "ok".
+
+AI step 6:  set Restart=always-immediately
+  Verdict:     WRONG
+  Error class: hallucinated 
+  Why:         "always-immediately" is not a valid
+  Solution: Reject. Invalid syntax.
+
+
+STRUCTURAL FINDING: 
+  Verdict:     WRONG/hallucinated
+  Error class: unverified:  no evidence, in my document, I included real outputs.
+  Why:         The AI draft only LISTS commands. It has no captured outputs and no
+               proof any step was run. The verified runbook pastes real output
+               under every step, proving each on the server. An un-run runbook
+               cannot be trusted.
+  Solution:  Treat the AI draft as a suggestion only.
+
+==================================================================================

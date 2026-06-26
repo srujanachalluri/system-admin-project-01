@@ -1,0 +1,80 @@
+Runbook: Restart ministry-web when the giving portal is down
+Written by: Sareena Challuri
+Date: 2026-06-25
+Lab: GitHub Codespaces, ministry-web runs as a Docker container (nginx, port 8080)
+
+SYMPTOM/ Error:
+The St. Augustine website giving portal is down / shows an error.
+
+Follow these steps to identify the error or fix the error:
+
+STEP 1 : CONFIRM (The service is up and running by using below commands)
+
+1. docker ps --filter name=ministry-web
+
+Result: 
+CONTAINER ID   IMAGE          COMMAND                  CREATED          STATUS          PORTS                                                 NAMES
+9626c71884f3   nginx:stable   "/docker-entrypoint.…"   48 minutes ago   Up 48 minutes   80/tcp, 0.0.0.0:8080->8080/tcp, [::]:8080->8080/tcp   ministry-web
+
+
+2. docker inspect ministry-web
+Result: 
+ "State": {
+            "Status": "running",
+            "Running": true,
+
+Note: for inspect command, you will get huge response, just check the whole result and find if anything is fishy in any of the fields.
+
+STEP 2 : CAPTURE (Before you make any changes it is important to take backup of the code and keep the current logs to verify later)
+
+docker logs --tail 20 ministry-web
+
+Result: 
+/docker-entrypoint.sh: Launching /docker-entrypoint.d/20-envsubst-on-templates.sh
+/docker-entrypoint.sh: Launching /docker-entrypoint.d/30-tune-worker-processes.sh
+/docker-entrypoint.sh: Configuration complete; ready for start up
+2026/06/25 15:52:28 [notice] 1#1: using the "epoll" event method
+2026/06/25 15:52:28 [notice] 1#1: nginx/1.30.3
+2026/06/25 15:52:28 [notice] 1#1: built by gcc 14.2.0 (Debian 14.2.0-19) 
+2026/06/25 15:52:28 [notice] 1#1: OS: Linux 6.8.0-1052-azure
+2026/06/25 15:52:28 [notice] 1#1: getrlimit(RLIMIT_NOFILE): 1024:524288
+2026/06/25 15:52:28 [notice] 1#1: start worker processes
+2026/06/25 15:52:28 [notice] 1#1: start worker process 21
+2026/06/25 15:52:28 [notice] 1#1: start worker process 22
+172.17.0.1 - - [25/Jun/2026:15:52:31 +0000] "GET /healthz HTTP/1.1" 200 3 "-" "curl/8.5.0" "-"
+
+STEP 3 : CHANGE (the actual fix - in most cases restarting the server can fix the issue)
+
+docker restart ministry-web
+ministry-web
+
+STEP 4 : VERIFY (Once restarting the server, open the website and check all functionalities, Starting server without any errors doesn't mean that the website is up and running)
+
+
+curl -i http://127.0.0.1:8080/healthz
+
+Result:
+HTTP/1.1 200 OK
+Server: nginx/1.30.3
+Date: Thu, 25 Jun 2026 16:45:10 GMT
+Content-Type: application/octet-stream
+Content-Length: 3
+Connection: keep-alive
+Content-Type: text/plain
+ok
+
+
+Note: SUCCESS = response is HTTP/1.1 200 OK and the body also says "ok" at the end of the command output.
+It means that the website URL is reachable and started successfully and verified.
+
+If it's not 200, or the body isn't say ok, the website isn't reachable and we need to invistigate in depth.
+
+Common Mistakes we make:
+
+1. Sometimes, instead of http, we use https (check that)
+2. We include different post number (post number may change if we restart the server in local server).
+3. Sometimes, we jsut run the server starting command and think that it already started before verifying the status of the command output.
+
+Verfiy all of the above mistakes and verify the webiste server again.
+
+Thank you 

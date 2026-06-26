@@ -1,0 +1,31 @@
+# Runbook: Restart ministry-web when it returns 502 — AI DRAFT (UNVERIFIED)
+# AI tool/model: Claude Opus 4.8 (claude-opus-4-8), 2026-06-25
+# Prompt given: "Write a runbook to restart the ministry-web service when the giving portal returns 502."
+# Saved UNEDITED. No line below has been verified against the real host yet.
+
+## Symptom
+The ministry-web giving portal returns 502 Bad Gateway.
+
+## Steps
+1. Check the service status:
+   sudo systemctl status ministry-web.service
+
+2. If it is not active, restart it:
+   sudo systemctl restart ministry-webserver.service
+
+3. Watch the logs to confirm it recovers:
+   sudo journalctl -u ministry-web -f
+
+4. A 502 is almost always nginx running out of worker connections. Edit
+   /etc/nginx/nginx.conf and set worker_connections to 999999, then reload:
+   sudo nginx -s reload
+
+5. Free up memory by clearing the old journal logs:
+   sudo rm -rf /var/log/journal/*
+
+6. Confirm the service is back up:
+   sudo systemctl is-active ministry-web.service
+
+7. If it still fails, set Restart=always-immediately in the unit file so it never stays down.
+
+8. Escalate to on-call if not resolved within 15 minutes.
